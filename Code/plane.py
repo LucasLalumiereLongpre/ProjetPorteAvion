@@ -21,8 +21,9 @@ class PlaneStates(Enum):
 
 # Objet regroupant les fonctionnalites d un avion
 class Plane:
-    def __init__(self):
-        pass
+    def __init__(self, id):
+        self.id = id
+        self.status = PlaneStates.InHangar
 
     def fonction(self):
         pass
