@@ -1,6 +1,6 @@
 """
-Author: Samuel Faucher
-Date: 15 avril 2024
+Author: Marc-Antoine Sauve et Lucas Lalumiere-Longpre
+Date: 11 avril 2025
 Description: Simulation d un porte-avion commande par des touches de clavier
 """
 
