@@ -1,6 +1,10 @@
 """
 Author: Marc-Antoine Sauve et Lucas Lalumiere-Longpre
 Date: 11 avril 2025
+
+A faire : 
+
+
 Description: Simulation d un porte-avion commande par des touches de clavier
 """
 
@@ -14,8 +18,14 @@ import ctypes
 import sys
 import select
 from plane import Plane, PlaneStates
+import os
 
 g_carrier_active = multiprocessing.Value('b', True) 
+
+
+def run_deck_script():
+    # Exécuter deck.py
+    os.system(f"python3 {os.path.join(os.getcwd(), 'deck.py')}")
 
 """Vérifie si une touche est pressée sans blocage."""
 def is_key_pressed():
@@ -24,7 +34,6 @@ def is_key_pressed():
 """Lit la touche appuyée."""
 def get_key_pressed():
     return sys.stdin.read(1)
-
 
 def getCatapultStatus(tabCatapultesAvant, tabCatapultesAvantMaintenance, tabCatapultesCote, tabCatapultesCoteMaintenance):
     print("\n--- État des catapultes ---")
@@ -49,9 +58,6 @@ def getCatapultStatus(tabCatapultesAvant, tabCatapultesAvantMaintenance, tabCata
         print(f"Catapulte côté {i+1} : {etat}")
     print("---------------------------\n")
 
-
-
-
 # Fonction qui lit le clavier periodiquement (a partir dans un thread a part)
 # Inputs: un booleen qui permet de sortir du thread de facon propre, la queue de message recu
 # Output: NA
@@ -65,8 +71,10 @@ def dashboard(carrier_active, inputQueue,
             if input_str in ("r", "l"):
                 inputQueue.put(input_str)
             elif input_str == "q":
-                ##carrier_active.value = False
                 inputQueue.put(input_str)
+                deck_process.join()
+                carrier_active.value = False
+
             elif input_str == "1":
                 if tabCatapultesAvant[0] == True:
                     sem_catapultesAvant.acquire()
@@ -131,13 +139,12 @@ def dashboard(carrier_active, inputQueue,
     print("Dashboard offline")
     keyPress_thread.join()
 
-
 if __name__ == "__main__":
      # Flag pour arrêter proprement le thread
     carrier_active = Value(ctypes.c_bool, True)
 
     # File de messages
-    inputQueue = Queue()
+    inputQueue = multiprocessing.Queue()
 
     sem_catapultesAvant = threading.Semaphore(2)
     sem_catapultesCote = threading.Semaphore(2)
@@ -149,6 +156,9 @@ if __name__ == "__main__":
     tabCatapultesCote = [True, True]
     tabCatapultesAvantMaintenance = [False, False]
     tabCatapultesCoteMaintenance = [False, False]
+    # Créer un processus pour exécuter deck.py
+    deck_process = multiprocessing.Process(target=run_deck_script)
+    deck_process.start()
 
     keyPress_thread = threading.Thread(
     target=dashboard,
@@ -167,9 +177,6 @@ if __name__ == "__main__":
     
     while(1) :
         {
-
-
-
         }
  
     # Exemple de boucle principale simulée
@@ -183,5 +190,6 @@ if __name__ == "__main__":
                     break
     except KeyboardInterrupt:
         carrier_active.value = False
+        deck_process.join()
 
     print("Programme terminé.")
