@@ -43,9 +43,26 @@ class Plane:
         self.catapult = catapult
 
     def launchPlane(self):
+        import deck
         duration = 5  # seconds
         steps = 100
         interval = duration / steps  # time between increments
+
+        while(self.getCatapult() == "None"):
+            if (deck.tabCatapultesFront[0] == True or deck.tabCatapultesFront[1] == True):  #Si une catapulte en avant est dispo
+                deck.semaphoreFront.acquire(blocking=False)  #Prend une cle
+                self.setCatapult("Front")   #Indique que l'avion est sur une catapulte a l'avant
+                if (deck.tabCatapultesFront[0] == True): #Si la catapulte est libre
+                    deck.tabCatapultesFront[0] = False   #indique que la catpulte n'est plus disponible
+                elif (deck.tabCatapultesFront[1] == True):
+                    deck.tabCatapultesFront[1] = False
+            elif (deck.tabCatapultesSide[0] == True or deck.tabCatapultesSide[1] == True): #Si une catapulte sur le cote est dispo
+                deck.semaphoreSide.acquire(blocking=False)
+                self.setCatapult("Side")    #Indique que l'avion est sur une catapulte sur le cote
+                if (deck.tabCatapultesSide[0] == True): #Si la catapulte est libre
+                    deck.tabCatapultesSide[0] = False   #indique que la catpulte n'est plus disponible
+                elif (deck.tabCatapultesSide[1] == True):
+                    deck.tabCatapultesSide[1] = False
 
         widgets = [' [',
          progressbar.Timer(format= 'elapsed time: %(elapsed)s'),
@@ -64,3 +81,23 @@ class Plane:
 
     def getProgress(self):
         return self.progress
+
+    def landPlane(self):
+        duration = 5  # seconds
+        steps = 100
+        interval = duration / steps  # time between increments
+
+        widgets = [' [',
+         progressbar.Timer(format= 'elapsed time: %(elapsed)s'),
+         '] ',
+           progressbar.Bar('#' ),' (', 
+           progressbar.ETA(), ') ',
+          ]
+        bar = progressbar.ProgressBar(max_value=steps, widgets=widgets).start()
+        
+        self.setStatus(PlaneStates.Landing)
+        for i in range(steps + 1):  # 0 to 100 inclusive
+            self.progress = i
+            time.sleep(interval)
+            bar.update(i)
+        self.setStatus(PlaneStates.Retired)
