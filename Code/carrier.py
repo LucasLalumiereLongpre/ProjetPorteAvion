@@ -163,12 +163,8 @@ if __name__ == "__main__":
         sem_catapultesCote
     )
 )
-
-
     keyPress_thread.start()
     
-
-
     while(1) :
         {
 
