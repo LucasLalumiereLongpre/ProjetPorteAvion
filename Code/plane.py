@@ -25,6 +25,7 @@ class Plane:
         self.id = id
         self.status = PlaneStates.InHangar
         self.progress = 0
+        self.catapult = "None"
 
     def getId(self):
         return self.id
@@ -34,6 +35,12 @@ class Plane:
     
     def setStatus(self, status):
         self.status = status
+
+    def getCatapult(self):
+        return self.catapult
+    
+    def setCatapult(self, catapult):
+        self.catapult = catapult
 
     def launchPlane(self):
         duration = 5  # seconds
