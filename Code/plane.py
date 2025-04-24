@@ -42,30 +42,29 @@ class Plane:
     def setCatapult(self, catapult):
         self.catapult = catapult
 
-    def launchPlane(self):
-        import deck
+    def launchPlane(self, tabCatapultesFront, tabCatapultesSide, semaphoreFront, semaphoreSide):
         duration = 5  # seconds
         steps = 100
         interval = duration / steps  # time between increments
 
         while(self.getCatapult() == "None"):
-            if (deck.tabCatapultesFront[0] == True or deck.tabCatapultesFront[1] == True):  #Si une catapulte en avant est dispo
-                deck.semaphoreFront.acquire(blocking=False)  #Prend une cle
+            if (tabCatapultesFront[0] == True or tabCatapultesFront[1] == True):  #Si une catapulte en avant est dispo
+                semaphoreFront.acquire(blocking=False)  #Prend une cle
                 self.setCatapult("Front")   #Indique que l'avion est sur une catapulte a l'avant
-                if (deck.tabCatapultesFront[0] == True): #Si la catapulte est libre
-                    deck.tabCatapultesFront[0] = False   #indique que la catpulte n'est plus disponible
-                elif (deck.tabCatapultesFront[1] == True):
-                    deck.tabCatapultesFront[1] = False
-            elif (deck.tabCatapultesSide[0] == True or deck.tabCatapultesSide[1] == True): #Si une catapulte sur le cote est dispo
-                deck.semaphoreSide.acquire(blocking=False)
+                if (tabCatapultesFront[0] == True): #Si la catapulte est libre
+                    tabCatapultesFront[0] = False   #indique que la catpulte n'est plus disponible
+                elif (tabCatapultesFront[1] == True):
+                    tabCatapultesFront[1] = False
+            elif (tabCatapultesSide[0] == True or tabCatapultesSide[1] == True): #Si une catapulte sur le cote est dispo
+                semaphoreSide.acquire(blocking=False)
                 self.setCatapult("Side")    #Indique que l'avion est sur une catapulte sur le cote
-                if (deck.tabCatapultesSide[0] == True): #Si la catapulte est libre
-                    deck.tabCatapultesSide[0] = False   #indique que la catpulte n'est plus disponible
-                elif (deck.tabCatapultesSide[1] == True):
-                    deck.tabCatapultesSide[1] = False
+                if (tabCatapultesSide[0] == True): #Si la catapulte est libre
+                    tabCatapultesSide[0] = False   #indique que la catpulte n'est plus disponible
+                elif (tabCatapultesSide[1] == True):
+                    tabCatapultesSide[1] = False
 
         widgets = [' [',
-         progressbar.Timer(format= 'elapsed time: %(elapsed)s'),
+         progressbar.Timer(format= 'Plane launching: %(elapsed)s'),
          '] ',
            progressbar.Bar('#' ),' (', 
            progressbar.ETA(), ') ',
@@ -77,18 +76,37 @@ class Plane:
             self.progress = i
             time.sleep(interval)
             bar.update(i)
+        print('\n')
         self.setStatus(PlaneStates.InAir)
+        if(self.getCatapult() == "Front"):
+            semaphoreFront.release()
+            if (tabCatapultesFront[0] == False): 
+                    tabCatapultesFront[0] = True  
+            elif (tabCatapultesFront[1] == False):
+                    tabCatapultesFront[1] = True
+        elif(self.getCatapult() == "Side"):
+            semaphoreSide.release()
+            if (tabCatapultesSide[0] == False): 
+                    tabCatapultesSide[0] = True  
+            elif (tabCatapultesSide[1] == False):
+                    tabCatapultesSide[1] = True
 
     def getProgress(self):
         return self.progress
 
-    def landPlane(self):
+    def landPlane(self, tabCatapultesSide, semaphoreSide):
+        #Prend les deux cles du semaphore
+        semaphoreSide.acquire(blocking=False)
+        semaphoreSide.acquire(blocking=False)
+        tabCatapultesSide[0] = False
+        tabCatapultesSide[1] = False
+
         duration = 5  # seconds
         steps = 100
         interval = duration / steps  # time between increments
 
         widgets = [' [',
-         progressbar.Timer(format= 'elapsed time: %(elapsed)s'),
+         progressbar.Timer(format= 'Plane landing: %(elapsed)s'),
          '] ',
            progressbar.Bar('#' ),' (', 
            progressbar.ETA(), ') ',
@@ -100,4 +118,9 @@ class Plane:
             self.progress = i
             time.sleep(interval)
             bar.update(i)
+        print('\n')
         self.setStatus(PlaneStates.Retired)
+        semaphoreSide.release()
+        semaphoreSide.release()
+        tabCatapultesSide[0] = True
+        tabCatapultesSide[1] = True

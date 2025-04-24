@@ -19,13 +19,9 @@ import sys
 import select
 from plane import Plane, PlaneStates
 import os
+from deck import Deck
 
 g_carrier_active = multiprocessing.Value('b', True) 
-
-
-def run_deck_script():
-    # Exécuter deck.py
-    os.system(f"python3 {os.path.join(os.getcwd(), 'deck.py')}")
 
 """Vérifie si une touche est pressée sans blocage."""
 def is_key_pressed():
@@ -35,13 +31,13 @@ def is_key_pressed():
 def get_key_pressed():
     return sys.stdin.read(1)
 
-def getCatapultStatus(tabCatapultesAvant, tabCatapultesAvantMaintenance, tabCatapultesCote, tabCatapultesCoteMaintenance):
+def getCatapultStatus(tabCatapultesFront, tabCatapultesFrontMaintenance, tabCatapultesSide, tabCatapultesSideMaintenance):
     print("\n--- État des catapultes ---")
     for i in range(2):
         # Catapultes avant
-        if tabCatapultesAvantMaintenance[i]:
+        if tabCatapultesFrontMaintenance[i]:
             etat = "EN MAINTENANCE"
-        elif tabCatapultesAvant[i]:
+        elif tabCatapultesFront[i]:
             etat = "DISPONIBLE"
         else:
             etat = "OCCUPÉE"
@@ -49,9 +45,9 @@ def getCatapultStatus(tabCatapultesAvant, tabCatapultesAvantMaintenance, tabCata
         
     for i in range(2):
         # Catapultes côté
-        if tabCatapultesCoteMaintenance[i]:
+        if tabCatapultesSideMaintenance[i]:
             etat = "EN MAINTENANCE"
-        elif tabCatapultesCote[i]:
+        elif tabCatapultesSide[i]:
             etat = "DISPONIBLE"
         else:
             etat = "OCCUPÉE"
@@ -62,13 +58,13 @@ def getCatapultStatus(tabCatapultesAvant, tabCatapultesAvantMaintenance, tabCata
 # Inputs: un booleen qui permet de sortir du thread de facon propre, la queue de message recu
 # Output: NA
 def dashboard(carrier_active, inputQueue,
-              tabCatapultesAvant, tabCatapultesAvantMaintenance, sem_catapultesAvant,
-              tabCatapultesCote, tabCatapultesCoteMaintenance, sem_catapultesCote):
+              tabCatapultesFront, tabCatapultesFrontMaintenance, semaphoreFront,
+              tabCatapultesSide, tabCatapultesSideMaintenance, semaphoreSide):
     print("Dashboard online")
     while carrier_active.value:
         if is_key_pressed():
             input_str = get_key_pressed()
-            if input_str in ("r", "l"):
+            if input_str in ("r", "l", "s"):
                 inputQueue.put(input_str)
             elif input_str == "q":
                 inputQueue.put(input_str)
@@ -76,88 +72,89 @@ def dashboard(carrier_active, inputQueue,
                 carrier_active.value = False
 
             elif input_str == "1":
-                if tabCatapultesAvant[0] == True:
-                    sem_catapultesAvant.acquire()
-                    tabCatapultesAvant[0]=False
-                    tabCatapultesAvantMaintenance[0]=True
+                if tabCatapultesFront[0] == True:
+                    semaphoreFront.acquire()
+                    tabCatapultesFront[0]=False
+                    tabCatapultesFrontMaintenance[0]=True
                     print("*** One front catapult locked for maintenance ***")
-                elif tabCatapultesAvant[1]  == True:
-                    sem_catapultesAvant.acquire()
-                    tabCatapultesAvant[1]=False
-                    tabCatapultesAvantMaintenance[1]=True
+                elif tabCatapultesFront[1]  == True:
+                    semaphoreFront.acquire()
+                    tabCatapultesFront[1]=False
+                    tabCatapultesFrontMaintenance[1]=True
                     print("*** One front catapult locked for maintenance ***")
-                elif tabCatapultesAvantMaintenance[1]==True and tabCatapultesAvantMaintenance[0]==True:
+                elif tabCatapultesFrontMaintenance[1]==True and tabCatapultesFrontMaintenance[0]==True:
                     print("*** All catapults in front are already in maintenance ***")
                 else :
                     print("*** front catapult(s) in use, try again ***")
             elif input_str == "2":
-                if tabCatapultesAvantMaintenance[0] == True:
-                    tabCatapultesAvant[0]=True
-                    tabCatapultesAvantMaintenance[0] = False
-                    sem_catapultesAvant.release()
+                if tabCatapultesFrontMaintenance[0] == True:
+                    tabCatapultesFront[0]=True
+                    tabCatapultesFrontMaintenance[0] = False
+                    semaphoreFront.release()
                     print("*** One front catapult unlocked***")
 
-                elif tabCatapultesAvantMaintenance[1] == True:
-                    tabCatapultesAvant[1]=True
-                    tabCatapultesAvantMaintenance[1] = False
-                    sem_catapultesAvant.release()
+                elif tabCatapultesFrontMaintenance[1] == True:
+                    tabCatapultesFront[1]=True
+                    tabCatapultesFrontMaintenance[1] = False
+                    semaphoreFront.release()
                     print("*** One front catapult unlocked***")
                 else :
                     print("*** No front catapult in maintenance ***")
             elif input_str == "3":
-                if tabCatapultesCote[0] == True:
-                    sem_catapultesCote.acquire()
-                    tabCatapultesCote[0]=False
-                    tabCatapultesCoteMaintenance[0]=True
+                if tabCatapultesSide[0] == True:
+                    semaphoreSide.acquire()
+                    tabCatapultesSide[0]=False
+                    tabCatapultesSideMaintenance[0]=True
                     print("*** One side catapult locked for maintenance ***")
-                elif tabCatapultesCote[1]  == True:
-                    sem_catapultesCote.acquire()
-                    tabCatapultesCote[1]=False
-                    tabCatapultesCoteMaintenance[1]=True
+                elif tabCatapultesSide[1]  == True:
+                    semaphoreSide.acquire()
+                    tabCatapultesSide[1]=False
+                    tabCatapultesSideMaintenance[1]=True
                     print("*** One side catapult locked for maintenance ***")
-                elif tabCatapultesCoteMaintenance[1]==True and tabCatapultesCoteMaintenance[0]==True:
+                elif tabCatapultesSideMaintenance[1]==True and tabCatapultesSideMaintenance[0]==True:
                     print("*** All catapults on the side are already in maintenance ***")
                 else :
                     print("*** side catapult(s) in use, try again ***")
             elif input_str == "4":
-                if tabCatapultesCoteMaintenance[0] == True:
-                    tabCatapultesCote[0]=True
-                    tabCatapultesCoteMaintenance[0] = False
-                    sem_catapultesCote.release()
+                if tabCatapultesSideMaintenance[0] == True:
+                    tabCatapultesSide[0]=True
+                    tabCatapultesSideMaintenance[0] = False
+                    semaphoreSide.release()
                     print("*** One side catapult unlocked***")
 
-                elif tabCatapultesCoteMaintenance[1] == True:
-                    tabCatapultesCote[1]=True
-                    tabCatapultesCoteMaintenance[1] = False
-                    sem_catapultesCote.release()
+                elif tabCatapultesSideMaintenance[1] == True:
+                    tabCatapultesSide[1]=True
+                    tabCatapultesSideMaintenance[1] = False
+                    semaphoreSide.release()
                     print("*** One side catapult unlocked***")
                 else :
                     print("*** No side catapultin maintenance ***")
-            elif input_str == "s":
-                getCatapultStatus(tabCatapultesAvant, tabCatapultesAvantMaintenance, tabCatapultesCote, tabCatapultesCoteMaintenance)
+            elif input_str == "v":
+                getCatapultStatus(tabCatapultesFront, tabCatapultesFrontMaintenance, tabCatapultesSide, tabCatapultesSideMaintenance)
 
     print("Dashboard offline")
-    keyPress_thread.join()
+    #keyPress_thread.join()
 
 if __name__ == "__main__":
      # Flag pour arrêter proprement le thread
     carrier_active = Value(ctypes.c_bool, True)
 
     # File de messages
-    inputQueue = multiprocessing.Queue()
+    inputQueue = Queue()
 
-    sem_catapultesAvant = threading.Semaphore(2)
-    sem_catapultesCote = threading.Semaphore(2)
+    semaphoreFront = threading.Semaphore(2)
+    semaphoreSide = threading.Semaphore(2)
 
     condAvant = Condition()
     condCote = Condition()
 
-    tabCatapultesAvant = [True, True]
-    tabCatapultesCote = [True, True]
-    tabCatapultesAvantMaintenance = [False, False]
-    tabCatapultesCoteMaintenance = [False, False]
+    tabCatapultesFront = [True, True]
+    tabCatapultesSide = [True, True]
+    tabCatapultesFrontMaintenance = [False, False]
+    tabCatapultesSideMaintenance = [False, False]
     # Créer un processus pour exécuter deck.py
-    deck_process = multiprocessing.Process(target=run_deck_script)
+    deck = Deck(tabCatapultesFront, tabCatapultesSide, semaphoreFront, semaphoreSide, inputQueue)
+    deck_process = multiprocessing.Process(target=deck.runDeck)
     deck_process.start()
 
     keyPress_thread = threading.Thread(
@@ -165,14 +162,14 @@ if __name__ == "__main__":
     args=(
         g_carrier_active,
         inputQueue,
-        tabCatapultesAvant,
-        tabCatapultesAvantMaintenance,
-        sem_catapultesAvant,
-        tabCatapultesCote,
-        tabCatapultesCoteMaintenance,
-        sem_catapultesCote
+        tabCatapultesFront,
+        tabCatapultesFrontMaintenance,
+        semaphoreFront,
+        tabCatapultesSide,
+        tabCatapultesSideMaintenance,
+        semaphoreSide
     )
-)
+    )
     keyPress_thread.start()
     
     while(1) :
