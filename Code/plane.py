@@ -21,11 +21,15 @@ class PlaneStates(Enum):
 
 # Objet regroupant les fonctionnalites d un avion
 class Plane:
-    def __init__(self, id):
+    def __init__(self, id,tabCatapultesFront, tabCatapultesSide, semaphoreFront, semaphoreSide,):
         self.id = id
         self.status = PlaneStates.InHangar
         self.progress = 0
         self.catapult = "None"
+        self.tabCatapultesFront = tabCatapultesFront
+        self.tabCatapultesSide = tabCatapultesSide
+        self.semaphoreFront = semaphoreFront
+        self.semaphoreSide = semaphoreSide
 
     def getId(self):
         return self.id
@@ -42,26 +46,26 @@ class Plane:
     def setCatapult(self, catapult):
         self.catapult = catapult
 
-    def launchPlane(self, tabCatapultesFront, tabCatapultesSide, semaphoreFront, semaphoreSide):
+    def launchPlane(self):
         duration = 5  # seconds
         steps = 100
         interval = duration / steps  # time between increments
 
         while(self.getCatapult() == "None"):
-            if (tabCatapultesFront[0] == True or tabCatapultesFront[1] == True):  #Si une catapulte en avant est dispo
-                semaphoreFront.acquire(blocking=False)  #Prend une cle
+            if (self.tabCatapultesFront[0] == True or self.tabCatapultesFront[1] == True):  #Si une catapulte en avant est dispo
+                self.semaphoreFront.acquire()  #Prend une cle
                 self.setCatapult("Front")   #Indique que l'avion est sur une catapulte a l'avant
-                if (tabCatapultesFront[0] == True): #Si la catapulte est libre
-                    tabCatapultesFront[0] = False   #indique que la catpulte n'est plus disponible
-                elif (tabCatapultesFront[1] == True):
-                    tabCatapultesFront[1] = False
-            elif (tabCatapultesSide[0] == True or tabCatapultesSide[1] == True): #Si une catapulte sur le cote est dispo
-                semaphoreSide.acquire(blocking=False)
+                if (self.tabCatapultesFront[0] == True): #Si la catapulte est libre
+                    self.tabCatapultesFront[0] = False   #indique que la catpulte n'est plus disponible
+                elif (self.tabCatapultesFront[1] == True):
+                    self.tabCatapultesFront[1] = False
+            elif (self.tabCatapultesSide[0] == True or self.tabCatapultesSide[1] == True): #Si une catapulte sur le cote est dispo
+                self.semaphoreSide.acquire()
                 self.setCatapult("Side")    #Indique que l'avion est sur une catapulte sur le cote
-                if (tabCatapultesSide[0] == True): #Si la catapulte est libre
-                    tabCatapultesSide[0] = False   #indique que la catpulte n'est plus disponible
-                elif (tabCatapultesSide[1] == True):
-                    tabCatapultesSide[1] = False
+                if (self.tabCatapultesSide[0] == True): #Si la catapulte est libre
+                    self.tabCatapultesSide[0] = False   #indique que la catpulte n'est plus disponible
+                elif (self.tabCatapultesSide[1] == True):
+                    self.tabCatapultesSide[1] = False
 
         widgets = [' [',
          progressbar.Timer(format= 'Plane launching: %(elapsed)s'),
@@ -79,27 +83,27 @@ class Plane:
         print('\n')
         self.setStatus(PlaneStates.InAir)
         if(self.getCatapult() == "Front"):
-            semaphoreFront.release()
-            if (tabCatapultesFront[0] == False): 
-                    tabCatapultesFront[0] = True  
-            elif (tabCatapultesFront[1] == False):
-                    tabCatapultesFront[1] = True
+            self.semaphoreFront.release()
+            if (self.tabCatapultesFront[0] == False): 
+                    self.tabCatapultesFront[0] = True  
+            elif (self.tabCatapultesFront[1] == False):
+                    self.tabCatapultesFront[1] = True
         elif(self.getCatapult() == "Side"):
-            semaphoreSide.release()
-            if (tabCatapultesSide[0] == False): 
-                    tabCatapultesSide[0] = True  
-            elif (tabCatapultesSide[1] == False):
-                    tabCatapultesSide[1] = True
+            self.semaphoreSide.release()
+            if (self.tabCatapultesSide[0] == False): 
+                    self.tabCatapultesSide[0] = True  
+            elif (self.tabCatapultesSide[1] == False):
+                    self.tabCatapultesSide[1] = True
 
     def getProgress(self):
         return self.progress
 
-    def landPlane(self, tabCatapultesSide, semaphoreSide):
+    def landPlane(self):
         #Prend les deux cles du semaphore
-        semaphoreSide.acquire(blocking=False)
-        semaphoreSide.acquire(blocking=False)
-        tabCatapultesSide[0] = False
-        tabCatapultesSide[1] = False
+        self.semaphoreSide.acquire()
+        self.semaphoreSide.acquire()
+        self.tabCatapultesSide[0] = False
+        self.tabCatapultesSide[1] = False
 
         duration = 5  # seconds
         steps = 100
@@ -120,7 +124,7 @@ class Plane:
             bar.update(i)
         print('\n')
         self.setStatus(PlaneStates.Retired)
-        semaphoreSide.release()
-        semaphoreSide.release()
-        tabCatapultesSide[0] = True
-        tabCatapultesSide[1] = True
+        self.semaphoreSide.release()
+        self.semaphoreSide.release()
+        self.tabCatapultesSide[0] = True
+        self.tabCatapultesSide[1] = True

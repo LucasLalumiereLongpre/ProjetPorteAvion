@@ -70,6 +70,7 @@ def dashboard(carrier_active, inputQueue,
                 inputQueue.put(input_str)
                 deck_process.join()
                 carrier_active.value = False
+                keyPress_thread.join()
 
             elif input_str == "1":
                 if tabCatapultesFront[0] == True:
@@ -131,25 +132,29 @@ def dashboard(carrier_active, inputQueue,
                     print("*** No side catapultin maintenance ***")
             elif input_str == "v":
                 getCatapultStatus(tabCatapultesFront, tabCatapultesFrontMaintenance, tabCatapultesSide, tabCatapultesSideMaintenance)
-
+    tabCatapultesFront = [True, True]
+    tabCatapultesSide = [True, True]
     print("Dashboard offline")
     #keyPress_thread.join()
 
 if __name__ == "__main__":
+    manager = multiprocessing.Manager()
      # Flag pour arrêter proprement le thread
     carrier_active = Value(ctypes.c_bool, True)
 
     # File de messages
     inputQueue = Queue()
 
-    semaphoreFront = threading.Semaphore(2)
-    semaphoreSide = threading.Semaphore(2)
+    semaphoreFront = multiprocessing.Semaphore(2)
+    semaphoreSide = multiprocessing.Semaphore(2)
 
     condAvant = Condition()
     condCote = Condition()
 
-    tabCatapultesFront = [True, True]
-    tabCatapultesSide = [True, True]
+    tabCatapultesFront = manager.list([True, True])
+    tabCatapultesSide = manager.list([True, True])
+
+
     tabCatapultesFrontMaintenance = [False, False]
     tabCatapultesSideMaintenance = [False, False]
     # Créer un processus pour exécuter deck.py
@@ -171,22 +176,10 @@ if __name__ == "__main__":
     )
     )
     keyPress_thread.start()
-    
-    while(1) :
-        {
-        }
- 
-    # Exemple de boucle principale simulée
-    try:
-        while True:
-            if not inputQueue.empty():
-                message = inputQueue.get()
-                print(f"Reçu : {message}")
-                if message == "exit":
-                    carrier_active.value = False
-                    break
-    except KeyboardInterrupt:
-        carrier_active.value = False
-        deck_process.join()
+    while(carrier_active.value):
+        if(KeyboardInterrupt):
+            carrier_active.value = False
+            deck_process.join()
+            keyPress_thread.join()
 
     print("Programme terminé.")

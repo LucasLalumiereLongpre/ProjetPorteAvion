@@ -14,9 +14,9 @@ class Deck:
         self.semaphoreFront = semaphoreFront
         self.semaphoreSide = semaphoreSide
 
-    def process_input(self, inputQueue):
-        if not inputQueue.empty():
-            return inputQueue.get()
+    def process_input(self):
+        if not self.inputQueue.empty():
+            return self.inputQueue.get()
 
     def checkPlanes(self):
         for plane in self.planes:
@@ -25,23 +25,25 @@ class Deck:
     #Verifie si la piste d'aterrisage est disponible
     def checkLanding(self, plane):
         if (self.tabCatapultesSide[0] == True and self.tabCatapultesSide[1] == True): #Si les catapultes du cote sont dispo
-            plane.landPlane(self.tabCatapultesSide, self.semaphoreSide)
+            plane.landPlane()
             self.planes.pop(0)
         
 
     #Fonction qui prepare un avion pour un lancement.
     def prepareToLaunch(self):
         nbPlanes = len(self.planes)
-        self.planes.append(Plane(nbPlanes))  #Cree un nouvel avion et l'ajoute dans la liste d'avions
+        self.planes.append(Plane(nbPlanes,self.tabCatapultesFront,self.tabCatapultesSide,self.semaphoreFront,self.semaphoreSide))  #Cree un nouvel avion et l'ajoute dans la liste d'avions
         self.planes[nbPlanes].setStatus(PlaneStates.WaitingToLaunch) #met l'etat de l'avion a WaitingToLaunch
 
-        planeThread = threading.Thread(target=self.planes[nbPlanes].launchPlane(self.tabCatapultesFront, self.tabCatapultesSide, self.semaphoreFront, self.semaphoreSide), name=f"Thread-{nbPlanes + 1}") #Cree un thread pour lancer l'avion
+        planeThread = threading.Thread(target=self.planes[nbPlanes].launchPlane, name=f"Thread-{nbPlanes + 1}") #Cree un thread pour lancer l'avion
         self.threads.append(planeThread) #Ajoute le thread a la liste de threads
         planeThread.start() #Lance l'avion
     
     def runDeck(self):
         while(True):  
-            message = self.process_input(self.inputQueue)
+            message = self.process_input()
+            if (message is not None):
+                print(f"deck: {message}")
             if(message == "l"):     #Pour lancer un avion
                 self.prepareToLaunch()
             elif(message == "r"):   #Pour faire atterir un avion
