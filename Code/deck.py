@@ -14,10 +14,12 @@ class Deck:
         self.semaphoreFront = semaphoreFront
         self.semaphoreSide = semaphoreSide
 
+    #Fonction pour recevoir une commande
     def process_input(self):
         if not self.inputQueue.empty():
             return self.inputQueue.get()
 
+    #Fonction qui retourne le status des avions
     def checkPlanes(self):
         for plane in self.planes:
             print(f"\nPlane {plane.getId()}: {plane.getStatus()}")
@@ -25,8 +27,9 @@ class Deck:
     #Verifie si la piste d'aterrisage est disponible
     def checkLanding(self, plane):
         if (self.tabCatapultesSide[0] == True and self.tabCatapultesSide[1] == True): #Si les catapultes du cote sont dispo
-            plane.landPlane()
-            self.planes.pop(0)
+            landingThread = threading.Thread(target=plane.landPlane)
+            self.threads.append(landingThread) #Ajoute le thread a la liste de threads
+            landingThread.start()   #Part un thread pour atterir un avion
         
 
     #Fonction qui prepare un avion pour un lancement.
@@ -39,16 +42,20 @@ class Deck:
         self.threads.append(planeThread) #Ajoute le thread a la liste de threads
         planeThread.start() #Lance l'avion
     
+    #Fonction pour operer le deck
     def runDeck(self):
-        while(True):  
-            message = self.process_input()
+        while(True):    #Boucle principale
+            message = self.process_input()  #recoit un message de la tour de controle
             if (message is not None):
                 print(f"deck: {message}")
             if(message == "l"):     #Pour lancer un avion
                 self.prepareToLaunch()
             elif(message == "r"):   #Pour faire atterir un avion
                 if self.planes:
-                    self.checkLanding(self.planes[0])   #Fait atterir le premier avion dans la liste
+                    for plane in self.planes:
+                        if (plane.getStatus() == PlaneStates.InAir):
+                            self.checkLanding(plane)   #Fait atterir le premier avion qui vole dans la liste
+                            break
                 else:
                     print("No planes to land")
             elif(message == "s"):   #Pour afficher les etats des avions
@@ -56,7 +63,8 @@ class Deck:
             elif(message == "q"):   #Pour fermer le programme
                 if self.planes:
                     for plane in self.planes:   #Fait atterir les avions avant de fermer
-                        self.checkLanding(plane)
+                        if (plane.getStatus() == PlaneStates.InAir):
+                            self.checkLanding(plane)    #Fait atterir tous les avions dans les airs
                     for thread in self.threads:
                         thread.join()
                     break

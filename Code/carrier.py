@@ -70,7 +70,6 @@ def dashboard(carrier_active, inputQueue,
                 inputQueue.put(input_str)
                 deck_process.join()
                 carrier_active.value = False
-                keyPress_thread.join()
 
             elif input_str == "1":
                 if tabCatapultesFront[0] == True:
@@ -182,4 +181,4 @@ if __name__ == "__main__":
             deck_process.join()
             keyPress_thread.join()
 
-    print("Programme terminé.")
+    keyPress_thread.join()

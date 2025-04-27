@@ -23,9 +23,9 @@ class PlaneStates(Enum):
 class Plane:
     def __init__(self, id,tabCatapultesFront, tabCatapultesSide, semaphoreFront, semaphoreSide,):
         self.id = id
-        self.status = PlaneStates.InHangar
-        self.progress = 0
-        self.catapult = "None"
+        self.status = PlaneStates.InHangar  #Etat de l'avion
+        self.progress = 0   #Valeur de la barre de progres actuelle
+        self.catapult = "None"  #CAtapulte choisie
         self.tabCatapultesFront = tabCatapultesFront
         self.tabCatapultesSide = tabCatapultesSide
         self.semaphoreFront = semaphoreFront
@@ -46,12 +46,13 @@ class Plane:
     def setCatapult(self, catapult):
         self.catapult = catapult
 
+    #methode pour lancer un avion
     def launchPlane(self):
-        duration = 5  # seconds
+        duration = 20  #En secondes
         steps = 100
-        interval = duration / steps  # time between increments
+        interval = duration / steps  #temps entre increment
 
-        while(self.getCatapult() == "None"):
+        while(self.getCatapult() == "None"):    #tant que l'avion n'a pas choisi de catapulte
             if (self.tabCatapultesFront[0] == True or self.tabCatapultesFront[1] == True):  #Si une catapulte en avant est dispo
                 self.semaphoreFront.acquire()  #Prend une cle
                 self.setCatapult("Front")   #Indique que l'avion est sur une catapulte a l'avant
@@ -75,20 +76,20 @@ class Plane:
           ]
         bar = progressbar.ProgressBar(max_value=steps, widgets=widgets).start()
         
-        self.setStatus(PlaneStates.Launching)
+        self.setStatus(PlaneStates.Launching)   #Indique que l'avion decolle
         for i in range(steps + 1):  # 0 to 100 inclusive
             self.progress = i
             time.sleep(interval)
             bar.update(i)
         print('\n')
-        self.setStatus(PlaneStates.InAir)
-        if(self.getCatapult() == "Front"):
-            self.semaphoreFront.release()
+        self.setStatus(PlaneStates.InAir)   #Indique que l'avion est dans les airs
+        if(self.getCatapult() == "Front"):  #S'il a pris une catapulte a l'avant
+            self.semaphoreFront.release()   #Relache la cle semaphore
             if (self.tabCatapultesFront[0] == False): 
                     self.tabCatapultesFront[0] = True  
             elif (self.tabCatapultesFront[1] == False):
                     self.tabCatapultesFront[1] = True
-        elif(self.getCatapult() == "Side"):
+        elif(self.getCatapult() == "Side"): #S'il a pris une catapulte sur le cote
             self.semaphoreSide.release()
             if (self.tabCatapultesSide[0] == False): 
                     self.tabCatapultesSide[0] = True  
@@ -105,9 +106,9 @@ class Plane:
         self.tabCatapultesSide[0] = False
         self.tabCatapultesSide[1] = False
 
-        duration = 5  # seconds
+        duration = 20  #En secondes
         steps = 100
-        interval = duration / steps  # time between increments
+        interval = duration / steps  #Temp entre increment
 
         widgets = [' [',
          progressbar.Timer(format= 'Plane landing: %(elapsed)s'),
@@ -121,10 +122,10 @@ class Plane:
         for i in range(steps + 1):  # 0 to 100 inclusive
             self.progress = i
             time.sleep(interval)
-            bar.update(i)
+            bar.update(i)   #Met a jour la barre de progres
         print('\n')
-        self.setStatus(PlaneStates.Retired)
-        self.semaphoreSide.release()
+        self.setStatus(PlaneStates.Retired) #Indique que l'avion est retourne au hangar
+        self.semaphoreSide.release()    #relache les cles semaphore
         self.semaphoreSide.release()
         self.tabCatapultesSide[0] = True
         self.tabCatapultesSide[1] = True
