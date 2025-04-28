@@ -2,9 +2,6 @@
 Author: Marc-Antoine Sauve et Lucas Lalumiere-Longpre
 Date: 11 avril 2025
 
-A faire : 
-
-
 Description: Simulation d un porte-avion commande par des touches de clavier
 """
 
@@ -21,7 +18,7 @@ from plane import Plane, PlaneStates
 import os
 from deck import Deck
 
-g_carrier_active = multiprocessing.Value('b', True) 
+g_carrier_active = multiprocessing.Value('b', True) #Variable indiquant si le dashboard est actif
 
 """Vérifie si une touche est pressée sans blocage."""
 def is_key_pressed():
@@ -31,15 +28,16 @@ def is_key_pressed():
 def get_key_pressed():
     return sys.stdin.read(1)
 
+#Fonction qui affiche les etats des catapultes
 def getCatapultStatus(tabCatapultesFront, tabCatapultesFrontMaintenance, tabCatapultesSide, tabCatapultesSideMaintenance):
     print("\n--- État des catapultes ---")
     for i in range(2):
         # Catapultes avant
-        if tabCatapultesFrontMaintenance[i]:
+        if tabCatapultesFrontMaintenance[i]:    #Si la catapulte est en maintenance
             etat = "EN MAINTENANCE"
-        elif tabCatapultesFront[i]:
+        elif tabCatapultesFront[i]: #Si la catapulte est disponible
             etat = "DISPONIBLE"
-        else:
+        else:   #Sinon, la catapulte est occupee
             etat = "OCCUPÉE"
         print(f"Catapulte avant {i+1} : {etat}")
         
@@ -61,21 +59,21 @@ def dashboard(carrier_active, inputQueue,
               tabCatapultesFront, tabCatapultesFrontMaintenance, semaphoreFront,
               tabCatapultesSide, tabCatapultesSideMaintenance, semaphoreSide):
     print("Dashboard online")
-    while carrier_active.value:
-        if is_key_pressed():
-            input_str = get_key_pressed()
-            if input_str in ("r", "l", "s"):
+    while carrier_active.value: #Tant que carrier_active est a True
+        if is_key_pressed():    #Si une touche du clavier est appuyee
+            input_str = get_key_pressed()   
+            if input_str in ("r", "l", "s"):    #Si la touche est r, l ou s
+                inputQueue.put(input_str)       #On envoie la commande au deck a partir de la queue
+            elif input_str == "q":  #Si la touche est q
                 inputQueue.put(input_str)
-            elif input_str == "q":
-                inputQueue.put(input_str)
-                deck_process.join()
-                carrier_active.value = False
+                deck_process.join() #Attend que le processus de deck se ferme
+                carrier_active.value = False    #Indique qu'on desactive le porte avion
 
-            elif input_str == "1":
-                if tabCatapultesFront[0] == True:
-                    semaphoreFront.acquire()
-                    tabCatapultesFront[0]=False
-                    tabCatapultesFrontMaintenance[0]=True
+            elif input_str == "1":  #Si la touche est 1, pour mettre une catapulte de l'avant en maintenance
+                if tabCatapultesFront[0] == True:   #Si la catapulte est disponible
+                    semaphoreFront.acquire()    #Prend la cle sempahore
+                    tabCatapultesFront[0]=False #Indique que la catapulte est occupee
+                    tabCatapultesFrontMaintenance[0]=True   #Indique que la cata est en maintenance
                     print("*** One front catapult locked for maintenance ***")
                 elif tabCatapultesFront[1]  == True:
                     semaphoreFront.acquire()
@@ -86,11 +84,11 @@ def dashboard(carrier_active, inputQueue,
                     print("*** All catapults in front are already in maintenance ***")
                 else :
                     print("*** front catapult(s) in use, try again ***")
-            elif input_str == "2":
+            elif input_str == "2":  #Si la touche est 2, pour liberer une catapulte en avant
                 if tabCatapultesFrontMaintenance[0] == True:
                     tabCatapultesFront[0]=True
                     tabCatapultesFrontMaintenance[0] = False
-                    semaphoreFront.release()
+                    semaphoreFront.release()    #Relache la cle
                     print("*** One front catapult unlocked***")
 
                 elif tabCatapultesFrontMaintenance[1] == True:
@@ -100,7 +98,7 @@ def dashboard(carrier_active, inputQueue,
                     print("*** One front catapult unlocked***")
                 else :
                     print("*** No front catapult in maintenance ***")
-            elif input_str == "3":
+            elif input_str == "3":  #Si la touche est 3, pour mettre une catapulte du cote en maintenance
                 if tabCatapultesSide[0] == True:
                     semaphoreSide.acquire()
                     tabCatapultesSide[0]=False
@@ -115,7 +113,7 @@ def dashboard(carrier_active, inputQueue,
                     print("*** All catapults on the side are already in maintenance ***")
                 else :
                     print("*** side catapult(s) in use, try again ***")
-            elif input_str == "4":
+            elif input_str == "4":  #Si la touche est 4, pour liberer une catapulte du cote
                 if tabCatapultesSideMaintenance[0] == True:
                     tabCatapultesSide[0]=True
                     tabCatapultesSideMaintenance[0] = False
@@ -134,7 +132,6 @@ def dashboard(carrier_active, inputQueue,
     tabCatapultesFront = [True, True]
     tabCatapultesSide = [True, True]
     print("Dashboard offline")
-    #keyPress_thread.join()
 
 if __name__ == "__main__":
     manager = multiprocessing.Manager()
@@ -144,22 +141,20 @@ if __name__ == "__main__":
     # File de messages
     inputQueue = Queue()
 
+    #Cles semaphore avant et cote
     semaphoreFront = multiprocessing.Semaphore(2)
     semaphoreSide = multiprocessing.Semaphore(2)
 
-    condAvant = Condition()
-    condCote = Condition()
-
+    #Initialise les tableux des catapultes
     tabCatapultesFront = manager.list([True, True])
     tabCatapultesSide = manager.list([True, True])
-
-
     tabCatapultesFrontMaintenance = [False, False]
     tabCatapultesSideMaintenance = [False, False]
+
     # Créer un processus pour exécuter deck.py
     deck = Deck(tabCatapultesFront, tabCatapultesSide, semaphoreFront, semaphoreSide, inputQueue)
     deck_process = multiprocessing.Process(target=deck.runDeck)
-    deck_process.start()
+    deck_process.start()    #Demarre le processus
 
     keyPress_thread = threading.Thread(
     target=dashboard,
@@ -174,10 +169,10 @@ if __name__ == "__main__":
         semaphoreSide
     )
     )
-    keyPress_thread.start()
-    while(carrier_active.value):
-        if(KeyboardInterrupt):
-            carrier_active.value = False
+    keyPress_thread.start() #Demarre le thread du dashboard
+    while(carrier_active.value):    #Tant que le porte avion est actif
+        if(KeyboardInterrupt):      #Si CTRL + C appuye
+            carrier_active.value = False    #Desactive le porte avion
             deck_process.join()
             keyPress_thread.join()
 

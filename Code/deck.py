@@ -16,13 +16,13 @@ class Deck:
 
     #Fonction pour recevoir une commande
     def process_input(self):
-        if not self.inputQueue.empty():
+        if not self.inputQueue.empty(): #S'il y a une commande dans la queue
             return self.inputQueue.get()
 
     #Fonction qui retourne le status des avions
     def checkPlanes(self):
         for plane in self.planes:
-            print(f"\nPlane {plane.getId()}: {plane.getStatus()}")
+            print(f"\nPlane {plane.getId()}: {plane.getStatusName()}")
 
     #Verifie si la piste d'aterrisage est disponible
     def checkLanding(self, plane):
@@ -66,8 +66,8 @@ class Deck:
                         if (plane.getStatus() == PlaneStates.InAir):
                             self.checkLanding(plane)    #Fait atterir tous les avions dans les airs
                     for thread in self.threads:
-                        thread.join()
-                    break
+                        thread.join()   #Attend que tous les threads se ferment
+                    break   #Sort de la boucle while
                 else:
                     for thread in self.threads:
                         thread.join()
