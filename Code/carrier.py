@@ -2,7 +2,17 @@
 Author: Marc-Antoine Sauve et Lucas Lalumiere-Longpre
 Date: 11 avril 2025
 
-Description: Simulation d un porte-avion commande par des touches de clavier
+Description: Simulation d un porte-avion commande par des touches de clavier, demarre le processus du deck
+Touches: -V : etats des catapultes
+         -1 : barrer une catapulte en avant
+         -2 : debarrer une catapulte en avant
+         -3 : barrer une catapulte sur le cote
+         -4 : debarrer une catapulte sur le cote
+         
+         -l : faire decoller un avion
+         -r : faire atterir un avion
+         -s : affiche les etats des avions
+         -q : eteindre le programme
 """
 
 import time

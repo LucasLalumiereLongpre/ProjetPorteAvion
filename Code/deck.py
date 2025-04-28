@@ -1,3 +1,10 @@
+"""
+Author: Marc-Antoine Sauve et Lucas Lalumiere-Longpre
+Date: 11 avril 2025
+
+Description: Deck du porte-avion, gere les avions et les catapultes.
+"""
+
 from plane import Plane, PlaneStates
 import threading
 import time
