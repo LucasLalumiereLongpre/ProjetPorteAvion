@@ -1,3 +1,6 @@
+Fait par Marc-Antoine Sauvé et Lucas Lalumière 
+date : 28 avril 2025
+
 Ce programme fait la simulation d'un porte-avion permettant l'envoie d'avion, de faire de la maintenance sur ses catapultes et de faire atterrir ces avions.
 
 Contient 2 fichiers:
