@@ -1,5 +1,5 @@
 """
-Author: Samuel Faucher
+Author: Lucas Lalumiere-Longpre
 Date: 15 avril 2024
 Description: Simulation des differentes phases d une avion sur un porte-avion
 """
